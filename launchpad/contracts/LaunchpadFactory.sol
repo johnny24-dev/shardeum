@@ -57,7 +57,7 @@ contract LaunchpadFactory is FixinTokenSpender {
     );
 
     mapping(address => Collection) private collections;
-    mapping(address => mapping(address => MintInfoDetail))
+    mapping(address => mapping(address => mapping( string => MintInfoDetail)))
         private mint_nft_info;
     mapping(address => mapping(uint256 => address)) private token_info;
     mapping(address => mapping(string => MintGroup)) private mint_groups;
@@ -159,7 +159,7 @@ contract LaunchpadFactory is FixinTokenSpender {
         emit UpdateCollectionEvent(collection_address, name, symbol, supply);
     }
 
-    function mint_natve(
+    function mint_native(
         address collection_address,
         string memory group_name,
         uint256 quantity,
@@ -197,7 +197,7 @@ contract LaunchpadFactory is FixinTokenSpender {
 
         MintInfoDetail memory mint_info = mint_nft_info[msg.sender][
             collection_address
-        ];
+        ][group_name];
 
         require(mint_info.minted < mint_group.max_tokens, "Max Token Minted");
 
@@ -230,7 +230,7 @@ contract LaunchpadFactory is FixinTokenSpender {
         // // update state
 
         collections[collection_address] = collection;
-        mint_nft_info[msg.sender][collection_address] = mint_info;
+        mint_nft_info[msg.sender][collection_address][group_name] = mint_info;
 
         emit MintNativeEvent(
             collection_address,
@@ -249,9 +249,10 @@ contract LaunchpadFactory is FixinTokenSpender {
     }
 
     function getMintInfoDetail(
-        address collection_address
+        address collection_address,
+        string memory group_name
     ) public view returns (MintInfoDetail memory mint_info) {
-        mint_info = mint_nft_info[msg.sender][collection_address];
+        mint_info = mint_nft_info[msg.sender][collection_address][group_name];
     }
 
     function getMinter(
