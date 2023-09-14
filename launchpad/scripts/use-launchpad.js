@@ -22,21 +22,21 @@ const run = async () => {
     )
 
     const tx = await contract.register_collection(
-        "BlueMove",
-        "BL",
-        10,
-        "https://bluemovecdn.s3.ap-northeast-1.amazonaws.com/alpha-dragon",
+        "Zezu's Soul",
+        "ZSL",
+        10000000,
+        "https://zezu.s3.ap-northeast-1.amazonaws.com/zezus-soul",
         500,
         "0x5e47F1691c2139F484204D600695471D45caEA49",
         "0x5e47F1691c2139F484204D600695471D45caEA49",
         false,
         [
-            { name: "Public", merkle_root: ethers.constants.HashZero, max_tokens: 5, unit_price: 10000, start_time: 1693366697000, end_time: 1693453097000 }
+            { name: "Public", merkle_root: ethers.constants.HashZero, max_tokens: 1, unit_price: 0, start_time: 1694592000000, end_time: 1695456000000 }
         ]
     );
 
     console.log(`Transaction to change the message is ${tx.hash}`);
-    await tx.wait();
+    // await tx.wait();
 
 }
 

@@ -1,0 +1,151 @@
+//SPDX-License-Identifier: MIT
+pragma solidity =0.8.19;
+
+import "./INFTContract.sol";
+
+interface IMarketplace {
+    event CreateAsk(
+        address indexed seller,
+        address indexed nft,
+        uint256 indexed tokenID,
+        uint256 price,
+        address to
+    );
+    event CancelAsk(
+        address indexed seller,
+        address indexed nft,
+        uint256 indexed tokenID
+    );
+    event AcceptAsk(
+        address indexed nft,
+        uint256 indexed tokenID,
+        uint256 price,
+        address indexed buyer,
+        address to
+    );
+
+    event CreateBid(
+        uint256 bid_id,
+        address indexed nft,
+        uint256 indexed tokenID,
+        address indexed bidder,
+        uint256 price
+    );
+    event CancelBid(
+        uint256 bid_id,
+        address indexed nft,
+        uint256 indexed tokenID,
+        address indexed bidder
+    );
+
+    event AcceptBid(
+        uint256 bid_id,
+        address indexed nft,
+        uint256 indexed tokenID,
+        address bidder,
+        address indexed accepter,
+        uint256 price
+    );
+
+    event CreateCollectionOffer(
+        uint256 collection_offer_id,
+        address bidder,
+        uint256 price_per_item,
+        uint256 quantity
+    );
+
+    event CancleCollectionOffer(
+        uint256 collection_offer_id,
+        address bidder,
+        uint256 price_per_item,
+        uint256 quantity,
+        uint256 recived_amount
+    );
+
+    event AcceptCollectionOffer(
+        uint256 collection_offer_id,
+        address bidder,
+        uint256 price_per_item,
+        uint256 remaining_quantity
+    );
+
+    event WithdrawEvent(
+        address sender,
+        uint256 amount
+    );
+
+    struct Ask {
+        bool exists;
+        address seller;
+        uint256 price;
+        address to;
+    }
+
+    struct Bid {
+        uint256 bid_id;
+        bool exists;
+        address buyer;
+        uint256 price;
+    }
+
+    struct CollectionOffer {
+        uint256 collection_offer_id;
+        address bidder;
+        uint256 price_per_item;
+        uint256 amount;
+    }
+
+    function createAsk(
+        INFTContract[] calldata nft,
+        uint256[] calldata tokenID,
+        uint256[] calldata price,
+        address[] calldata to
+    ) external;
+
+    function createBid(
+        INFTContract[] calldata nft,
+        uint256[] calldata tokenID,
+        uint256[] calldata price
+    ) external payable;
+
+    function createCollectionOffer(
+        INFTContract nft,
+        uint256 pricePerItem,
+        uint256 quantity
+    ) external payable;
+
+    function cancelAsk(
+        INFTContract[] calldata nft,
+        uint256[] calldata tokenID
+    ) external;
+
+    function cancelBid(
+        INFTContract[] calldata nft,
+        uint256[] calldata tokenID,
+        uint256[] calldata bidID
+    ) external;
+
+    function cancelCollectionOffer(
+        INFTContract nft,
+        uint256 collectionOfferId
+    ) external;
+
+    function acceptAsk(
+        INFTContract[] calldata nft,
+        uint256[] calldata tokenID
+    ) external payable;
+
+    function acceptBid(
+        INFTContract[] calldata nft,
+        uint256[] calldata tokenID,
+        uint256[] calldata bidID
+    ) external payable;
+
+    function acceptCollectionOffer(
+        INFTContract nft,
+        uint256 tokenID,
+        uint256 collectionOfferId
+    ) external payable;
+
+    function withdraw() external;
+}
