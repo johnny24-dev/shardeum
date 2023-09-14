@@ -3,7 +3,10 @@ pragma solidity ^0.8.19;
 import "./BlueMoveNFT.sol";
 import "./IBlueMoveNFT.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
+import "@openzeppelin/contracts/interfaces/IERC721Metadata.sol";
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import "./FixinTokenSpender.sol";
+
 // import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 contract LaunchpadFactory is FixinTokenSpender {
@@ -57,7 +60,7 @@ contract LaunchpadFactory is FixinTokenSpender {
     );
 
     mapping(address => Collection) private collections;
-    mapping(address => mapping(address => mapping( string => MintInfoDetail)))
+    mapping(address => mapping(address => mapping(string => MintInfoDetail)))
         private mint_nft_info;
     mapping(address => mapping(uint256 => address)) private token_info;
     mapping(address => mapping(string => MintGroup)) private mint_groups;
@@ -178,7 +181,11 @@ contract LaunchpadFactory is FixinTokenSpender {
         );
 
         uint256 current_time = block.timestamp * 1000;
-        require(mint_group.start_time <= current_time && current_time <= mint_group.end_time, "Not time to mint");
+        require(
+            mint_group.start_time <= current_time &&
+                current_time <= mint_group.end_time,
+            "Not time to mint"
+        );
 
         uint256 must_pay = quantity * mint_group.unit_price;
         require(msg.value == must_pay, "Invalid Balance");
@@ -204,11 +211,13 @@ contract LaunchpadFactory is FixinTokenSpender {
         // send eth to creator
         _transferEth(collection.creator_wallet, must_pay);
         // // mint nft
+
         for (uint256 j = 0; j < quantity; ) {
             uint256 current_id = collection.next_token_id;
+            uint256 uri_id = (current_id % 39) + 1;
             string memory token_uri = create_token_uri(
                 collection.token_uri,
-                current_id
+                uri_id
             );
             IBlueMoveNFT(collection_address).safeMint(
                 msg.sender,
@@ -219,16 +228,16 @@ contract LaunchpadFactory is FixinTokenSpender {
                 mint_info.group_name = group_name;
                 mint_info.exist = true;
             }
+            address _collection_address = collection_address;
             mint_info.minted += 1;
             collection.next_token_id += 1;
-            token_info[collection_address][current_id] = msg.sender;
+            token_info[_collection_address][current_id] = msg.sender;
             unchecked {
                 j += 1;
             }
         }
 
         // // update state
-
         collections[collection_address] = collection;
         mint_nft_info[msg.sender][collection_address][group_name] = mint_info;
 
@@ -262,8 +271,18 @@ contract LaunchpadFactory is FixinTokenSpender {
         minter = token_info[collection_address][token_id];
     }
 
-    function getPhase(address collection_address, string memory group_name) public view returns (MintGroup memory phase){
+    function getPhase(
+        address collection_address,
+        string memory group_name
+    ) public view returns (MintGroup memory phase) {
         phase = mint_groups[collection_address][group_name];
+    }
+
+    function tokenUri(
+        address _collection_address,
+        uint256 token_id
+    ) public view returns (string memory uri) {
+        uri = IERC721Metadata(_collection_address).tokenURI(token_id);
     }
 
     // utils
@@ -279,7 +298,7 @@ contract LaunchpadFactory is FixinTokenSpender {
         string memory base_token_uri,
         uint256 token_id
     ) internal pure returns (string memory token_uri) {
-        string memory str_token_id = string(abi.encode(token_id));
+        string memory str_token_id = Strings.toString(token_id);
         token_uri = string(
             abi.encodePacked(base_token_uri, "/", str_token_id, ".json")
         );
