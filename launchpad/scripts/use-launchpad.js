@@ -35,6 +35,8 @@ const run = async () => {
         ]
     );
 
+    //[["Public","0x0000000000000000000000000000000000000000000000000000000000000000",1,0,1695024000000,1695888000000]]
+
     console.log(`Transaction to change the message is ${tx.hash}`);
     // await tx.wait();
 

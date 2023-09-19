@@ -1,7 +1,8 @@
 //SPDX-License-Identifier: MIT
 pragma solidity =0.8.19;
 
-import "./interfaces/INFTContract.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 
 // helps with sending the NFTs, will be particularly useful for batch operations
 library NFTCommon {
@@ -18,18 +19,18 @@ library NFTCommon {
      @param data    Additional data with no specified format, MUST be sent unaltered in call to `onERC1155Received` on `_to`
     */
     function safeTransferFrom_(
-        INFTContract nft,
+        address nft,
         address from,
         address to,
         uint256 tokenID,
         bytes memory data
     ) internal returns (bool) {
         // most are 721s, so we assume that that is what the NFT type is
-        try nft.safeTransferFrom(from, to, tokenID, data) {
+        try IERC721(nft).safeTransferFrom(from, to, tokenID, data) {
             return true;
             // on fail, use 1155s format
         } catch (bytes memory) {
-            try nft.safeTransferFrom(from, to, tokenID, 1, data) {
+            try IERC1155(nft).safeTransferFrom(from, to, tokenID, 1, data) {
                 return true;
             } catch (bytes memory) {
                 return false;
@@ -45,18 +46,18 @@ library NFTCommon {
      @return quantity of held token, possibly zero
     */
     function quantityOf(
-        INFTContract nft,
+        address nft,
         address potentialOwner,
         uint256 tokenID
     ) internal view returns (uint256) {
-        try nft.ownerOf(tokenID) returns (address owner) {
+        try IERC721(nft).ownerOf(tokenID) returns (address owner) {
             if (owner == potentialOwner) {
                 return 1;
             } else {
                 return 0;
             }
         } catch (bytes memory) {
-            try nft.balanceOf(potentialOwner, tokenID) returns (
+            try IERC1155(nft).balanceOf(potentialOwner, tokenID) returns (
                 uint256 amount
             ) {
                 return amount;
@@ -67,14 +68,14 @@ library NFTCommon {
     }
 
     function approveCommon(
-        INFTContract nft,
+        address nft,
         address to,
         uint256 tokenId
     ) internal returns (bool) {
-        try nft.approve(to, tokenId) {
+        try IERC721(nft).approve(to, tokenId) {
             return true;
         } catch (bytes memory) {
-            try nft.setApprovalForAll(to, true) {
+            try IERC1155(nft).setApprovalForAll(to, true) {
                 return true;
             } catch (bytes memory) {
                 return false;
@@ -83,14 +84,14 @@ library NFTCommon {
     }
 
     function revokesCommon(
-        INFTContract nft,
+        address nft,
         address to,
         uint256 tokenId
     ) internal returns (bool) {
-        try nft.approve(address(0), tokenId) {
+        try IERC721(nft).approve(address(0), tokenId) {
             return true;
         } catch (bytes memory) {
-            try nft.setApprovalForAll(to, false) {
+            try IERC1155(nft).setApprovalForAll(to, false) {
                 return true;
             } catch (bytes memory) {
                 return false;
@@ -99,19 +100,19 @@ library NFTCommon {
     }
 
     function getApproved(
-        INFTContract nft,
+        address nft,
         address owner,
         address to,
         uint256 tokenId
     ) internal view returns (bool) {
-        try nft.getApproved(tokenId) returns (address operator) {
+        try IERC721(nft).getApproved(tokenId) returns (address operator) {
             if (operator == to) {
                 return true;
             } else {
                 return false;
             }
         } catch (bytes memory) {
-            try nft.isApprovedForAll(owner, to) returns (bool isApproved) {
+            try IERC1155(nft).isApprovedForAll(owner, to) returns (bool isApproved) {
                 return isApproved;
             } catch (bytes memory) {
                 return false;

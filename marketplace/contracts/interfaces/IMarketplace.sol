@@ -1,7 +1,6 @@
 //SPDX-License-Identifier: MIT
 pragma solidity =0.8.19;
 
-import "./INFTContract.sol";
 
 interface IMarketplace {
     event CreateAsk(
@@ -106,55 +105,55 @@ interface IMarketplace {
     }
 
     function createAsk(
-        INFTContract[] calldata nft,
+        address[] calldata nft,
         uint256[] calldata tokenID,
         uint256[] calldata price,
         address[] calldata to
     ) external;
 
     function createBid(
-        INFTContract[] calldata nft,
+        address[] calldata nft,
         uint256[] calldata tokenID,
         uint256[] calldata price
     ) external payable;
 
     function createCollectionOffer(
-        INFTContract nft,
+        address nft,
         uint256 pricePerItem,
         uint256 quantity
     ) external payable;
 
     function cancelAsk(
-        INFTContract[] calldata nft,
+        address[] calldata nft,
         uint256[] calldata tokenID
     ) external;
 
     function cancelBid(
-        INFTContract[] calldata nft,
+        address[] calldata nft,
         uint256[] calldata tokenID,
         uint256[] calldata bidID
     ) external;
 
     function cancelCollectionOffer(
-        INFTContract nft,
+        address nft,
         uint256 collectionOfferId
     ) external;
 
     function acceptAsk(
-        INFTContract[] calldata nft,
+        address[] calldata nft,
         uint256[] calldata tokenID,
         uint256[] calldata prices
     ) external payable;
 
     function acceptBid(
-        INFTContract[] calldata nft,
+        address[] calldata nft,
         uint256[] calldata tokenID,
         uint256[] calldata bidID,
         uint256[] calldata prices
     ) external payable;
 
     function acceptCollectionOffer(
-        INFTContract nft,
+        address nft,
         uint256 tokenID,
         uint256 collectionOfferId,
         uint256 price

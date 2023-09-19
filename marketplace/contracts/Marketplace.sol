@@ -5,14 +5,14 @@ import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/common/ERC2981.sol";
 import "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts/interfaces/IERC2981.sol";
 
 import "./interfaces/IMarketplace.sol";
-import "./interfaces/INFTContract.sol";
 import "./NFTCommon.sol";
 
 contract Marketplace is IMarketplace, Initializable {
     using Address for address payable;
-    using NFTCommon for INFTContract;
+    using NFTCommon for address;
 
     mapping(address => mapping(uint256 => Ask)) public asks;
     mapping(address => mapping(uint256 => mapping(uint256 => Bid))) public bids;
@@ -108,7 +108,7 @@ contract Marketplace is IMarketplace, Initializable {
     /// @param to      Addresses for which the sale is reserved. If zero address,
     /// then anyone can accept.
     function createAsk(
-        INFTContract[] calldata nft,
+        address[] calldata nft,
         uint256[] calldata tokenID,
         uint256[] calldata price,
         address[] calldata to
@@ -121,7 +121,7 @@ contract Marketplace is IMarketplace, Initializable {
             // if feecollector extension applied, this ensures math is correct
             require(price[i] > 10_000, "price too low");
 
-            bool isApproved = nft[i].approveCommon(address(this), tokenID[i]);
+            bool isApproved = nft[i].getApproved(msg.sender,address(this), tokenID[i]);
             require(isApproved, "NFT is not approved");
 
             // overwristes or creates a new one
@@ -155,7 +155,7 @@ contract Marketplace is IMarketplace, Initializable {
     /// @param tokenID Token Ids of the NFTs msg.sender wishes to buy.
     /// @param price   Prices at which the buyer is willing to buy the NFTs.
     function createBid(
-        INFTContract[] calldata nft,
+        address[] calldata nft,
         uint256[] calldata tokenID,
         uint256[] calldata price
     ) external payable override {
@@ -184,9 +184,10 @@ contract Marketplace is IMarketplace, Initializable {
                 price: price[i]
             });
 
+            totalPrice += price[i];
+
             unchecked {
                 i++;
-                totalPrice += price[i];
                 current_event_id += 1;
             }
         }
@@ -195,7 +196,7 @@ contract Marketplace is IMarketplace, Initializable {
     }
 
     function createCollectionOffer(
-        INFTContract nft,
+        address nft,
         uint256 pricePerItem,
         uint256 quantity
     ) external payable override {
@@ -230,7 +231,7 @@ contract Marketplace is IMarketplace, Initializable {
     /// @param tokenID Token Ids of the NFTs msg.sender wishes to cancel the
     /// asks on.
     function cancelAsk(
-        INFTContract[] calldata nft,
+        address[] calldata nft,
         uint256[] calldata tokenID
     ) external override {
         for (uint256 i = 0; i < nft.length; ) {
@@ -240,8 +241,8 @@ contract Marketplace is IMarketplace, Initializable {
                 REVERT_NOT_A_CREATOR_OF_ASK
             );
 
-            bool revoke = nft[i].revokesCommon(address(this), tokenID[i]);
-            require(revoke, "NFT is not revoked!");
+            // bool revoke = nft[i].revokesCommon(address(this), tokenID[i]);
+            // require(revoke, "NFT is not revoked!");
 
             delete asks[nftAddress][tokenID[i]];
 
@@ -266,7 +267,7 @@ contract Marketplace is IMarketplace, Initializable {
     /// @param tokenID Token Ids of the NFTs msg.sender wishes to cancel the
     /// bids on.
     function cancelBid(
-        INFTContract[] calldata nft,
+        address[] calldata nft,
         uint256[] calldata tokenID,
         uint256[] calldata bidID
     ) external override {
@@ -289,17 +290,18 @@ contract Marketplace is IMarketplace, Initializable {
                 bidder: msg.sender
             });
 
+            escrow[msg.sender] += bids[nftAddress][tokenID[i]][bidID[i]].price;
+
             unchecked {
                 i++;
                 current_event_id += 1;
-                escrow[msg.sender] += bids[nftAddress][tokenID[i]][bidID[i]]
-                    .price;
+                
             }
         }
     }
 
     function cancelCollectionOffer(
-        INFTContract nft,
+        address nft,
         uint256 collectionOfferId
     ) external {
         address nftAddress = address(nft);
@@ -338,13 +340,13 @@ contract Marketplace is IMarketplace, Initializable {
     /// @param tokenID Token Ids of the NFTs msg.sender wishes to accept the
     /// asks on.
     function acceptAsk(
-        INFTContract[] calldata nft,
+        address[] calldata nft,
         uint256[] calldata tokenID,
         uint256[] calldata prices
     ) external payable override {
         uint256 totalPrice = 0;
         for (uint256 i = 0; i < nft.length; ) {
-            address nftAddress = address(nft[i]);
+            address nftAddress = nft[i];
 
             require(
                 asks[nftAddress][tokenID[i]].exists,
@@ -373,24 +375,12 @@ contract Marketplace is IMarketplace, Initializable {
                 "Not enough balance for purchase"
             );
 
-            // escrow[asks[nftAddress][tokenID[i]].seller] += _takeFee(
-            //     asks[nftAddress][tokenID[i]].price
-            // );
-
             _distribute(
                 nftAddress,
                 tokenID[i],
                 asks[nftAddress][tokenID[i]].seller,
                 asks[nftAddress][tokenID[i]].price
             );
-
-            // if there is a bid for this tokenID from msg.sender, cancel and refund
-            // if (bids[nftAddress][tokenID[i]].buyer == msg.sender) {
-            //     escrow[bids[nftAddress][tokenID[i]].buyer] += bids[nftAddress][
-            //         tokenID[i]
-            //     ].price;
-            //     delete bids[nftAddress][tokenID[i]];
-            // }
 
             uint256 event_id = current_event_id + 1;
 
@@ -411,11 +401,12 @@ contract Marketplace is IMarketplace, Initializable {
             );
             require(success, REVERT_NFT_NOT_SENT);
 
+            totalPrice += asks[nftAddress][tokenID[i]].price;
+
             delete asks[nftAddress][tokenID[i]];
 
             unchecked {
                 i++;
-                totalPrice += asks[nftAddress][tokenID[i]].price;
                 current_event_id += 1;
             }
         }
@@ -429,7 +420,7 @@ contract Marketplace is IMarketplace, Initializable {
     /// @param tokenID Token Ids of the NFTs msg.sender wishes to accept the
     /// bids on.
     function acceptBid(
-        INFTContract[] calldata nft,
+        address[] calldata nft,
         uint256[] calldata tokenID,
         uint256[] calldata bidID,
         uint256[] calldata prices
@@ -473,7 +464,7 @@ contract Marketplace is IMarketplace, Initializable {
                 price: bids[nftAddress][token_id][bid_id].price
             });
 
-            INFTContract _nft = nft[i];
+            address _nft = nft[i];
 
             bool success = _nft.safeTransferFrom_(
                 msg.sender,
@@ -487,9 +478,9 @@ contract Marketplace is IMarketplace, Initializable {
             }
             delete bids[nftAddress][token_id][bid_id];
 
+            escrowDelta += bids[nftAddress][token_id][bid_id].price;
             unchecked {
                 i++;
-                escrowDelta += bids[nftAddress][token_id][bid_id].price;
                 current_event_id += 1;
             }
         }
@@ -500,7 +491,7 @@ contract Marketplace is IMarketplace, Initializable {
     }
 
     function acceptCollectionOffer(
-        INFTContract nft,
+        address nft,
         uint256 tokenID,
         uint256 collectionOfferId,
         uint256 price
@@ -611,7 +602,7 @@ contract Marketplace is IMarketplace, Initializable {
                 type(IERC2981).interfaceId
             )
         ) {
-            (address creatorAddress, uint256 creatorShare) = INFTContract(
+            (address creatorAddress, uint256 creatorShare) = IERC2981(
                 _collectionAddress
             ).royaltyInfo(_tokenId, _salePrice);
 
