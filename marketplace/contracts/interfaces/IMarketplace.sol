@@ -5,6 +5,7 @@ import "./INFTContract.sol";
 
 interface IMarketplace {
     event CreateAsk(
+        uint256 event_id,
         address indexed seller,
         address indexed nft,
         uint256 indexed tokenID,
@@ -12,11 +13,13 @@ interface IMarketplace {
         address to
     );
     event CancelAsk(
+        uint256 event_id,
         address indexed seller,
         address indexed nft,
         uint256 indexed tokenID
     );
     event AcceptAsk(
+        uint256 event_id,
         address indexed nft,
         uint256 indexed tokenID,
         uint256 price,
@@ -25,6 +28,7 @@ interface IMarketplace {
     );
 
     event CreateBid(
+        uint256 event_id,
         uint256 bid_id,
         address indexed nft,
         uint256 indexed tokenID,
@@ -32,6 +36,7 @@ interface IMarketplace {
         uint256 price
     );
     event CancelBid(
+        uint256 event_id,
         uint256 bid_id,
         address indexed nft,
         uint256 indexed tokenID,
@@ -39,6 +44,7 @@ interface IMarketplace {
     );
 
     event AcceptBid(
+        uint256 event_id,
         uint256 bid_id,
         address indexed nft,
         uint256 indexed tokenID,
@@ -48,6 +54,7 @@ interface IMarketplace {
     );
 
     event CreateCollectionOffer(
+        uint256 event_id,
         uint256 collection_offer_id,
         address bidder,
         uint256 price_per_item,
@@ -55,6 +62,7 @@ interface IMarketplace {
     );
 
     event CancleCollectionOffer(
+        uint256 event_id,
         uint256 collection_offer_id,
         address bidder,
         uint256 price_per_item,
@@ -63,6 +71,7 @@ interface IMarketplace {
     );
 
     event AcceptCollectionOffer(
+        uint256 event_id,
         uint256 collection_offer_id,
         address bidder,
         uint256 price_per_item,
@@ -70,6 +79,7 @@ interface IMarketplace {
     );
 
     event WithdrawEvent(
+        uint256 event_id,
         address sender,
         uint256 amount
     );
@@ -132,19 +142,22 @@ interface IMarketplace {
 
     function acceptAsk(
         INFTContract[] calldata nft,
-        uint256[] calldata tokenID
+        uint256[] calldata tokenID,
+        uint256[] calldata prices
     ) external payable;
 
     function acceptBid(
         INFTContract[] calldata nft,
         uint256[] calldata tokenID,
-        uint256[] calldata bidID
+        uint256[] calldata bidID,
+        uint256[] calldata prices
     ) external payable;
 
     function acceptCollectionOffer(
         INFTContract nft,
         uint256 tokenID,
-        uint256 collectionOfferId
+        uint256 collectionOfferId,
+        uint256 price
     ) external payable;
 
     function withdraw() external;

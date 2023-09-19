@@ -10,7 +10,6 @@ import "./interfaces/IMarketplace.sol";
 import "./interfaces/INFTContract.sol";
 import "./NFTCommon.sol";
 
-
 contract Marketplace is IMarketplace, Initializable {
     using Address for address payable;
     using NFTCommon for INFTContract;
@@ -28,6 +27,7 @@ contract Marketplace is IMarketplace, Initializable {
     uint256 marketFee;
     uint256 current_bid_id;
     uint256 current_collection_offer_id;
+    uint256 current_event_id;
 
     // =====================================================================
 
@@ -65,11 +65,10 @@ contract Marketplace is IMarketplace, Initializable {
         marketFee = _marketFee;
         current_bid_id = 0;
         current_collection_offer_id = 0;
+        current_event_id = 0;
     }
 
     // constructor() initializer {}
-
-
 
     // admin function ==============================
 
@@ -83,7 +82,6 @@ contract Marketplace is IMarketplace, Initializable {
         marketFee = _newFee;
     }
 
-
     // /// @notice Sellers can receive their payment by calling this function.
     function withdraw() external override {
         uint256 amount = escrow[msg.sender];
@@ -93,9 +91,10 @@ contract Marketplace is IMarketplace, Initializable {
             value: amount
         }("");
         require(sent, "Failed to send Ether");
-        emit WithdrawEvent(address(msg.sender), amount);
+        uint256 event_id = current_event_id + 1;
+        current_event_id += 1;
+        emit WithdrawEvent(event_id, address(msg.sender), amount);
     }
-
 
     // ======= CREATE ASK / BID ============================================
 
@@ -114,7 +113,7 @@ contract Marketplace is IMarketplace, Initializable {
         uint256[] calldata price,
         address[] calldata to
     ) external override {
-        for (uint256 i = 0; i < nft.length; i++) {
+        for (uint256 i = 0; i < nft.length; ) {
             require(
                 nft[i].quantityOf(msg.sender, tokenID[i]) > 0,
                 REVERT_NOT_OWNER_OF_TOKEN_ID
@@ -133,13 +132,21 @@ contract Marketplace is IMarketplace, Initializable {
                 to: to[i]
             });
 
+            uint256 event_id = current_event_id + 1;
+
             emit CreateAsk({
+                event_id: event_id,
                 seller: msg.sender,
                 nft: address(nft[i]),
                 tokenID: tokenID[i],
                 price: price[i],
                 to: to[i]
             });
+
+            unchecked {
+                current_event_id += 1;
+                i++;
+            }
         }
     }
 
@@ -154,7 +161,7 @@ contract Marketplace is IMarketplace, Initializable {
     ) external payable override {
         uint256 totalPrice = 0;
 
-        for (uint256 i = 0; i < nft.length; i++) {
+        for (uint256 i = 0; i < nft.length; ) {
             address nftAddress = address(nft[i]);
             // overwrites or creates a new one
             uint256 bid_id = current_bid_id + 1;
@@ -165,15 +172,23 @@ contract Marketplace is IMarketplace, Initializable {
                 price: price[i]
             });
 
+            uint256 event_id = current_event_id + 1;
+            current_bid_id = bid_id;
+
             emit CreateBid({
+                event_id: event_id,
                 bid_id: bid_id,
                 nft: nftAddress,
                 tokenID: tokenID[i],
                 bidder: msg.sender,
                 price: price[i]
             });
-            current_bid_id = bid_id;
-            totalPrice += price[i];
+
+            unchecked {
+                i++;
+                totalPrice += price[i];
+                current_event_id += 1;
+            }
         }
 
         require(totalPrice == msg.value, REVERT_INSUFFICIENT_ETHER);
@@ -196,7 +211,11 @@ contract Marketplace is IMarketplace, Initializable {
             amount: quantity
         });
 
+        uint256 event_id = current_event_id + 1;
+        current_event_id += 1;
+
         emit CreateCollectionOffer({
+            event_id: event_id,
             collection_offer_id: collection_offer_id,
             bidder: msg.sender,
             price_per_item: pricePerItem,
@@ -214,7 +233,7 @@ contract Marketplace is IMarketplace, Initializable {
         INFTContract[] calldata nft,
         uint256[] calldata tokenID
     ) external override {
-        for (uint256 i = 0; i < nft.length; i++) {
+        for (uint256 i = 0; i < nft.length; ) {
             address nftAddress = address(nft[i]);
             require(
                 asks[nftAddress][tokenID[i]].seller == msg.sender,
@@ -226,11 +245,19 @@ contract Marketplace is IMarketplace, Initializable {
 
             delete asks[nftAddress][tokenID[i]];
 
+            uint256 event_id = current_event_id + 1;
+
             emit CancelAsk({
+                event_id: event_id,
                 seller: msg.sender,
                 nft: nftAddress,
                 tokenID: tokenID[i]
             });
+
+            unchecked {
+                i++;
+                current_event_id += 1;
+            }
         }
     }
 
@@ -243,23 +270,31 @@ contract Marketplace is IMarketplace, Initializable {
         uint256[] calldata tokenID,
         uint256[] calldata bidID
     ) external override {
-        for (uint256 i = 0; i < nft.length; i++) {
+        for (uint256 i = 0; i < nft.length; ) {
             address nftAddress = address(nft[i]);
             require(
                 bids[nftAddress][tokenID[i]][bidID[i]].buyer == msg.sender,
                 REVERT_NOT_A_CREATOR_OF_BID
             );
 
-            escrow[msg.sender] += bids[nftAddress][tokenID[i]][bidID[i]].price;
-
             delete bids[nftAddress][tokenID[i]][bidID[i]];
 
+            uint256 event_id = current_event_id + 1;
+
             emit CancelBid({
+                event_id: event_id,
                 bid_id: bidID[i],
                 nft: nftAddress,
                 tokenID: tokenID[i],
                 bidder: msg.sender
             });
+
+            unchecked {
+                i++;
+                current_event_id += 1;
+                escrow[msg.sender] += bids[nftAddress][tokenID[i]][bidID[i]]
+                    .price;
+            }
         }
     }
 
@@ -278,7 +313,11 @@ contract Marketplace is IMarketplace, Initializable {
             collectionOffers[nftAddress][collectionOfferId].price_per_item;
         escrow[msg.sender] += reFund;
 
+        uint256 event_id = current_event_id + 1;
+        current_event_id += 1;
+
         emit CancleCollectionOffer({
+            event_id: event_id,
             collection_offer_id: collectionOfferId,
             bidder: msg.sender,
             price_per_item: collectionOffers[nftAddress][collectionOfferId]
@@ -300,10 +339,11 @@ contract Marketplace is IMarketplace, Initializable {
     /// asks on.
     function acceptAsk(
         INFTContract[] calldata nft,
-        uint256[] calldata tokenID
+        uint256[] calldata tokenID,
+        uint256[] calldata prices
     ) external payable override {
         uint256 totalPrice = 0;
-        for (uint256 i = 0; i < nft.length; i++) {
+        for (uint256 i = 0; i < nft.length; ) {
             address nftAddress = address(nft[i]);
 
             require(
@@ -328,7 +368,10 @@ contract Marketplace is IMarketplace, Initializable {
                 REVERT_ASK_SELLER_NOT_OWNER
             );
 
-            totalPrice += asks[nftAddress][tokenID[i]].price;
+            require(
+                prices[i] == asks[nftAddress][tokenID[i]].price,
+                "Not enough balance for purchase"
+            );
 
             // escrow[asks[nftAddress][tokenID[i]].seller] += _takeFee(
             //     asks[nftAddress][tokenID[i]].price
@@ -349,7 +392,10 @@ contract Marketplace is IMarketplace, Initializable {
             //     delete bids[nftAddress][tokenID[i]];
             // }
 
+            uint256 event_id = current_event_id + 1;
+
             emit AcceptAsk({
+                event_id: event_id,
                 nft: nftAddress,
                 tokenID: tokenID[i],
                 price: asks[nftAddress][tokenID[i]].price,
@@ -366,6 +412,12 @@ contract Marketplace is IMarketplace, Initializable {
             require(success, REVERT_NFT_NOT_SENT);
 
             delete asks[nftAddress][tokenID[i]];
+
+            unchecked {
+                i++;
+                totalPrice += asks[nftAddress][tokenID[i]].price;
+                current_event_id += 1;
+            }
         }
 
         require(totalPrice == msg.value, REVERT_ASK_INSUFFICIENT_VALUE);
@@ -379,10 +431,11 @@ contract Marketplace is IMarketplace, Initializable {
     function acceptBid(
         INFTContract[] calldata nft,
         uint256[] calldata tokenID,
-        uint256[] calldata bidID
+        uint256[] calldata bidID,
+        uint256[] calldata prices
     ) external payable override {
         uint256 escrowDelta = 0;
-        for (uint256 i = 0; i < nft.length; i++) {
+        for (uint256 i = 0; i < nft.length; ) {
             require(
                 nft[i].quantityOf(msg.sender, tokenID[i]) > 0,
                 REVERT_NOT_OWNER_OF_TOKEN_ID
@@ -390,7 +443,10 @@ contract Marketplace is IMarketplace, Initializable {
 
             address nftAddress = address(nft[i]);
 
-            escrowDelta += bids[nftAddress][tokenID[i]][bidID[i]].price;
+            require(
+                prices[i] == bids[nftAddress][tokenID[i]][bidID[i]].price,
+                "Not enough balacane!"
+            );
 
             _distribute(
                 nftAddress,
@@ -402,27 +458,40 @@ contract Marketplace is IMarketplace, Initializable {
             bool isApproved = nft[i].approveCommon(address(this), tokenID[i]);
             require(isApproved, "NFT is not approved");
 
+            uint256 event_id = current_event_id + 1;
+
+            uint256 token_id = tokenID[i];
+            uint256 bid_id = bidID[i];
+
             emit AcceptBid({
-                bid_id: bids[nftAddress][tokenID[i]][bidID[i]].bid_id,
+                event_id: event_id,
+                bid_id: bid_id,
                 nft: nftAddress,
-                tokenID: tokenID[i],
-                bidder: bids[nftAddress][tokenID[i]][bidID[i]].buyer,
+                tokenID: token_id,
+                bidder: bids[nftAddress][token_id][bid_id].buyer,
                 accepter: msg.sender,
-                price: bids[nftAddress][tokenID[i]][bidID[i]].price
+                price: bids[nftAddress][token_id][bid_id].price
             });
 
-            bool success = nft[i].safeTransferFrom_(
+            INFTContract _nft = nft[i];
+
+            bool success = _nft.safeTransferFrom_(
                 msg.sender,
-                bids[nftAddress][tokenID[i]][bidID[i]].buyer,
-                tokenID[i],
+                bids[nftAddress][token_id][bid_id].buyer,
+                token_id,
                 new bytes(0)
             );
             require(success, REVERT_NFT_NOT_SENT);
-            if (asks[nftAddress][tokenID[i]].exists) {
-                delete asks[nftAddress][tokenID[i]];
+            if (asks[nftAddress][token_id].exists) {
+                delete asks[nftAddress][token_id];
             }
+            delete bids[nftAddress][token_id][bid_id];
 
-            delete bids[nftAddress][tokenID[i]][bidID[i]];
+            unchecked {
+                i++;
+                escrowDelta += bids[nftAddress][token_id][bid_id].price;
+                current_event_id += 1;
+            }
         }
 
         // uint256 remaining = _takeFee(escrowDelta);
@@ -433,7 +502,8 @@ contract Marketplace is IMarketplace, Initializable {
     function acceptCollectionOffer(
         INFTContract nft,
         uint256 tokenID,
-        uint256 collectionOfferId
+        uint256 collectionOfferId,
+        uint256 price
     ) external payable {
         address nftAddress = address(nft);
         require(
@@ -444,6 +514,8 @@ contract Marketplace is IMarketplace, Initializable {
             nft.quantityOf(msg.sender, tokenID) > 0,
             REVERT_NOT_OWNER_OF_TOKEN_ID
         );
+
+        require(price == msg.value, "Not enough balance");
 
         bool isApproved = nft.approveCommon(address(this), tokenID);
         require(isApproved, "NFT is not approved");
@@ -477,22 +549,16 @@ contract Marketplace is IMarketplace, Initializable {
             delete collectionOffers[nftAddress][collectionOfferId];
         }
 
+        uint256 event_id = current_event_id + 1;
+        current_event_id += 1;
+
         emit AcceptCollectionOffer({
+            event_id: event_id,
             collection_offer_id: collectionOfferId,
             bidder: bidder,
             price_per_item: price_per_item,
             remaining_quantity: remain_quantity
         });
-    }
-
-    
-    // ============ ADMIN ==================================================
-
-    /// @dev Used to change the address of the trade fee receiver.
-    function changeBeneficiary(address payable newBeneficiary) external {
-        require(msg.sender == admin, "");
-        require(newBeneficiary != payable(address(0)), "");
-        beneficiary = newBeneficiary;
     }
 
     /// @dev sets the admin to the zero address. This implies that beneficiary

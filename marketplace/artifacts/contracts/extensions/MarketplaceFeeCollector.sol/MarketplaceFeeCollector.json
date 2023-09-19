@@ -7,6 +7,12 @@
       "anonymous": false,
       "inputs": [
         {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "event_id",
+          "type": "uint256"
+        },
+        {
           "indexed": true,
           "internalType": "address",
           "name": "nft",
@@ -43,6 +49,12 @@
     {
       "anonymous": false,
       "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "event_id",
+          "type": "uint256"
+        },
         {
           "indexed": false,
           "internalType": "uint256",
@@ -89,6 +101,12 @@
         {
           "indexed": false,
           "internalType": "uint256",
+          "name": "event_id",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
           "name": "collection_offer_id",
           "type": "uint256"
         },
@@ -118,6 +136,12 @@
       "anonymous": false,
       "inputs": [
         {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "event_id",
+          "type": "uint256"
+        },
+        {
           "indexed": true,
           "internalType": "address",
           "name": "seller",
@@ -142,6 +166,12 @@
     {
       "anonymous": false,
       "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "event_id",
+          "type": "uint256"
+        },
         {
           "indexed": false,
           "internalType": "uint256",
@@ -173,6 +203,12 @@
     {
       "anonymous": false,
       "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "event_id",
+          "type": "uint256"
+        },
         {
           "indexed": false,
           "internalType": "uint256",
@@ -210,6 +246,12 @@
     {
       "anonymous": false,
       "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "event_id",
+          "type": "uint256"
+        },
         {
           "indexed": true,
           "internalType": "address",
@@ -250,6 +292,12 @@
         {
           "indexed": false,
           "internalType": "uint256",
+          "name": "event_id",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
           "name": "bid_id",
           "type": "uint256"
         },
@@ -284,6 +332,12 @@
     {
       "anonymous": false,
       "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "event_id",
+          "type": "uint256"
+        },
         {
           "indexed": false,
           "internalType": "uint256",
@@ -330,6 +384,12 @@
       "inputs": [
         {
           "indexed": false,
+          "internalType": "uint256",
+          "name": "event_id",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
           "internalType": "address",
           "name": "sender",
           "type": "address"
@@ -368,6 +428,11 @@
           "internalType": "uint256[]",
           "name": "tokenID",
           "type": "uint256[]"
+        },
+        {
+          "internalType": "uint256[]",
+          "name": "prices",
+          "type": "uint256[]"
         }
       ],
       "name": "acceptAsk",
@@ -391,6 +456,11 @@
           "internalType": "uint256[]",
           "name": "bidID",
           "type": "uint256[]"
+        },
+        {
+          "internalType": "uint256[]",
+          "name": "prices",
+          "type": "uint256[]"
         }
       ],
       "name": "acceptBid",
@@ -413,6 +483,11 @@
         {
           "internalType": "uint256",
           "name": "collectionOfferId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "price",
           "type": "uint256"
         }
       ],
@@ -559,19 +634,6 @@
         }
       ],
       "name": "cancelCollectionOffer",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address payable",
-          "name": "newBeneficiary",
-          "type": "address"
-        }
-      ],
-      "name": "changeBeneficiary",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
