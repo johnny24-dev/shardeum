@@ -394,7 +394,7 @@
     {
       "inputs": [
         {
-          "internalType": "contract INFTContract[]",
+          "internalType": "address[]",
           "name": "nft",
           "type": "address[]"
         },
@@ -417,7 +417,7 @@
     {
       "inputs": [
         {
-          "internalType": "contract INFTContract[]",
+          "internalType": "address[]",
           "name": "nft",
           "type": "address[]"
         },
@@ -445,7 +445,7 @@
     {
       "inputs": [
         {
-          "internalType": "contract INFTContract",
+          "internalType": "address",
           "name": "nft",
           "type": "address"
         },
@@ -473,7 +473,7 @@
     {
       "inputs": [
         {
-          "internalType": "contract INFTContract[]",
+          "internalType": "address[]",
           "name": "nft",
           "type": "address[]"
         },
@@ -491,7 +491,7 @@
     {
       "inputs": [
         {
-          "internalType": "contract INFTContract[]",
+          "internalType": "address[]",
           "name": "nft",
           "type": "address[]"
         },
@@ -514,7 +514,7 @@
     {
       "inputs": [
         {
-          "internalType": "contract INFTContract",
+          "internalType": "address",
           "name": "nft",
           "type": "address"
         },
@@ -532,7 +532,7 @@
     {
       "inputs": [
         {
-          "internalType": "contract INFTContract[]",
+          "internalType": "address[]",
           "name": "nft",
           "type": "address[]"
         },
@@ -560,7 +560,7 @@
     {
       "inputs": [
         {
-          "internalType": "contract INFTContract[]",
+          "internalType": "address[]",
           "name": "nft",
           "type": "address[]"
         },
@@ -583,7 +583,7 @@
     {
       "inputs": [
         {
-          "internalType": "contract INFTContract",
+          "internalType": "address",
           "name": "nft",
           "type": "address"
         },
