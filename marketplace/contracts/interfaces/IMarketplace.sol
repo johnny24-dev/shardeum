@@ -159,5 +159,5 @@ interface IMarketplace {
         uint256 price
     ) external payable;
 
-    function withdraw() external;
+    // function withdraw() external;
 }

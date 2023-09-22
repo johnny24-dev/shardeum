@@ -1,3 +1,4 @@
+
 const hre = require('hardhat');
 async function main() {
   const Marketplace = await hre.ethers.getContractFactory("Marketplace");
@@ -15,3 +16,9 @@ main()
     console.error(error);
     process.exit(1);
   });
+
+
+  const abi = [
+    `function approve(address to, uint256 tokenId) external`,
+    `function getApproved(uint256 tokenId) external view returns (address operator)`
+  ]

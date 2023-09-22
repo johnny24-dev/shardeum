@@ -6,11 +6,12 @@ import "@openzeppelin/contracts/token/common/ERC2981.sol";
 import "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/interfaces/IERC2981.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 import "./interfaces/IMarketplace.sol";
 import "./NFTCommon.sol";
 
-contract Marketplace is IMarketplace, Initializable {
+contract Marketplace is IMarketplace, Initializable, ReentrancyGuard {
     using Address for address payable;
     using NFTCommon for address;
 
@@ -83,18 +84,18 @@ contract Marketplace is IMarketplace, Initializable {
     }
 
     // /// @notice Sellers can receive their payment by calling this function.
-    function withdraw() external override {
-        uint256 amount = escrow[msg.sender];
-        require(amount > 0, "Not enough amount to withdraw");
-        escrow[msg.sender] = 0;
-        (bool sent, bytes memory _data) = address(msg.sender).call{
-            value: amount
-        }("");
-        require(sent, "Failed to send Ether");
-        uint256 event_id = current_event_id + 1;
-        current_event_id += 1;
-        emit WithdrawEvent(event_id, address(msg.sender), amount);
-    }
+    // function withdraw() external override {
+    //     uint256 amount = escrow[msg.sender];
+    //     require(amount > 0, "Not enough amount to withdraw");
+    //     escrow[msg.sender] = 0;
+    //     (bool sent, bytes memory _data) = address(msg.sender).call{
+    //         value: amount
+    //     }("");
+    //     require(sent, "Failed to send Ether");
+    //     uint256 event_id = current_event_id + 1;
+    //     current_event_id += 1;
+    //     emit WithdrawEvent(event_id, address(msg.sender), amount);
+    // }
 
     // ======= CREATE ASK / BID ============================================
 
@@ -121,7 +122,11 @@ contract Marketplace is IMarketplace, Initializable {
             // if feecollector extension applied, this ensures math is correct
             require(price[i] > 10_000, "price too low");
 
-            bool isApproved = nft[i].getApproved(msg.sender,address(this), tokenID[i]);
+            bool isApproved = nft[i].getApproved(
+                msg.sender,
+                address(this),
+                tokenID[i]
+            );
             require(isApproved, "NFT is not approved");
 
             // overwristes or creates a new one
@@ -270,7 +275,8 @@ contract Marketplace is IMarketplace, Initializable {
         address[] calldata nft,
         uint256[] calldata tokenID,
         uint256[] calldata bidID
-    ) external override {
+    ) external override nonReentrant {
+        uint256 total_refund = 0;
         for (uint256 i = 0; i < nft.length; ) {
             address nftAddress = address(nft[i]);
             require(
@@ -290,20 +296,21 @@ contract Marketplace is IMarketplace, Initializable {
                 bidder: msg.sender
             });
 
-            escrow[msg.sender] += bids[nftAddress][tokenID[i]][bidID[i]].price;
+            total_refund += bids[nftAddress][tokenID[i]][bidID[i]].price;
 
             unchecked {
                 i++;
                 current_event_id += 1;
-                
             }
         }
+        (bool sent, ) = address(msg.sender).call{value: total_refund}("");
+        require(sent, "Failed to send Ether");
     }
 
     function cancelCollectionOffer(
         address nft,
         uint256 collectionOfferId
-    ) external {
+    ) external nonReentrant {
         address nftAddress = address(nft);
         require(
             collectionOffers[nftAddress][collectionOfferId].bidder ==
@@ -313,7 +320,9 @@ contract Marketplace is IMarketplace, Initializable {
         uint256 reFund = collectionOffers[nftAddress][collectionOfferId]
             .amount *
             collectionOffers[nftAddress][collectionOfferId].price_per_item;
-        escrow[msg.sender] += reFund;
+
+        (bool sent, ) = address(msg.sender).call{value: reFund}("");
+        require(sent, "Failed to send Ether");
 
         uint256 event_id = current_event_id + 1;
         current_event_id += 1;
@@ -574,7 +583,7 @@ contract Marketplace is IMarketplace, Initializable {
         uint256 _tokenId,
         address _sellerAddress,
         uint256 _salePrice
-    ) internal {
+    ) internal nonReentrant {
         uint256 marketShare = (_salePrice * marketFee) / 10000;
         (address creatorAddress, uint256 creatorShare) = _getCreatorShare(
             _collectionAddress,
@@ -585,10 +594,18 @@ contract Marketplace is IMarketplace, Initializable {
         uint256 sellerShare = _salePrice - marketShare - creatorShare;
 
         if (creatorShare > 0 && creatorAddress != address(0)) {
-            escrow[creatorAddress] += creatorShare;
+            // escrow[creatorAddress] += creatorShare;
+            (bool sent, ) = address(creatorAddress).call{value: creatorShare}(
+                ""
+            );
+            require(sent, "Failed to send Ether");
         }
-        escrow[beneficiary] += marketShare;
-        escrow[_sellerAddress] += sellerShare;
+        // escrow[beneficiary] += marketShare;
+        (bool sentBF, ) = address(beneficiary).call{value: marketShare}("");
+        // escrow[_sellerAddress] += sellerShare;
+        (bool sentSL, ) = address(_sellerAddress).call{value: sellerShare}("");
+
+        require(sentBF && sentSL, "Failed to send Ether");
     }
 
     function _getCreatorShare(
