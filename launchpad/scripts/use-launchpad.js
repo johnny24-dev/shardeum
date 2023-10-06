@@ -25,7 +25,7 @@ const run = async () => {
         "Zezu's Soul",
         "ZSL",
         10000000,
-        "https://zezu.s3.ap-northeast-1.amazonaws.com/zezus-soul",
+        "https://zezu.s3.ap-northeast-1.amazonaws.com/galacticore",
         500,
         "0x5e47F1691c2139F484204D600695471D45caEA49",
         "0x5e47F1691c2139F484204D600695471D45caEA49",
@@ -35,7 +35,7 @@ const run = async () => {
         ]
     );
 
-    //[["Public","0x0000000000000000000000000000000000000000000000000000000000000000",5,0,1696258800000,1697122800000]]
+    //[["Public","0x0000000000000000000000000000000000000000000000000000000000000000",5,0,1696518000000,1697382000000]]
 
     console.log(`Transaction to change the message is ${tx.hash}`);
     // await tx.wait();

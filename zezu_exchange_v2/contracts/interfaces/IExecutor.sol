@@ -22,7 +22,8 @@ interface IExecutor {
         uint256 price,
         FeeRate makerFee,
         Fees fees,
-        OrderType orderType
+        OrderType orderType,
+        address sender
     );
 
     event ExecutionAcceptCollectionOffer(

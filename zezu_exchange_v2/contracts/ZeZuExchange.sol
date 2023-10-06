@@ -397,7 +397,8 @@ contract ZeZuExchange is IZeZuExchange, Executor, ReentrancyGuard {
             listing.index,
             totalPrice,
             fees,
-            OrderType.ASK
+            OrderType.ASK,
+            msg.sender
         );
 
         /* Return dust. */
@@ -484,7 +485,8 @@ contract ZeZuExchange is IZeZuExchange, Executor, ReentrancyGuard {
             listing.index,
             totalPrice,
             fees,
-            OrderType.BID
+            OrderType.BID,
+            msg.sender
         );
     }
 
@@ -569,7 +571,8 @@ contract ZeZuExchange is IZeZuExchange, Executor, ReentrancyGuard {
             executionBatch,
             fungibleTransfers,
             fees,
-            OrderType.ASK
+            OrderType.ASK,
+            msg.sender
         );
 
         /* Return dust. */
@@ -652,7 +655,8 @@ contract ZeZuExchange is IZeZuExchange, Executor, ReentrancyGuard {
             executionBatch,
             fungibleTransfers,
             fees,
-            OrderType.BID
+            OrderType.BID,
+            msg.sender
         );
     }
 

@@ -347,7 +347,8 @@ abstract contract Executor is IExecutor, Validation {
         bytes memory executionBatch,
         FungibleTransfers memory fungibleTransfers,
         Fees memory fees,
-        OrderType orderType
+        OrderType orderType,
+        address sender
     ) internal {
         uint256 batchLength;
         assembly {
@@ -441,7 +442,8 @@ abstract contract Executor is IExecutor, Validation {
                         fees,
                         stateUpdate,
                         orderType,
-                        i
+                        i,
+                        sender
                     );
                 }
 
@@ -694,7 +696,8 @@ abstract contract Executor is IExecutor, Validation {
         Fees memory fees,
         StateUpdate memory stateUpdate,
         OrderType orderType,
-        uint256 transferIndex
+        uint256 transferIndex,
+        address sender
     ) internal {
         Transfer memory transfer;
         assembly {
@@ -718,7 +721,8 @@ abstract contract Executor is IExecutor, Validation {
             price,
             makerFee,
             fees,
-            orderType
+            orderType,
+            sender
         );
     }
 
@@ -739,7 +743,8 @@ abstract contract Executor is IExecutor, Validation {
         uint256 price,
         FeeRate memory makerFee,
         Fees memory fees,
-        OrderType orderType
+        OrderType orderType,
+        address sender
     ) internal {
         if (
             // see _insertNonfungibleTransfer; ERC721 transfers don't set the transfer amount,
@@ -807,7 +812,8 @@ abstract contract Executor is IExecutor, Validation {
             price: price,
             makerFee: makerFee,
             fees: fees,
-            orderType: orderType
+            orderType: orderType,
+            sender:sender
         });
     }
 
@@ -826,7 +832,8 @@ abstract contract Executor is IExecutor, Validation {
         uint256 listingIndex,
         uint256 price,
         Fees memory fees,
-        OrderType orderType
+        OrderType orderType,
+        address sender
     ) internal {
         Transfer memory transfer;
         assembly {
@@ -847,7 +854,8 @@ abstract contract Executor is IExecutor, Validation {
             price,
             order.makerFee,
             fees,
-            orderType
+            orderType,
+            sender
         );
     }
 
